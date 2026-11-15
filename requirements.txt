@@ -7,7 +7,8 @@ pandas>=3.1,<4
 openpyxl>=3.1,<4
 python-dotenv>=1.2,<2
 
-# Streamlit dashboard (Snowflake)              tested: streamlit 1.67.0, snowflake-connector-python 5.2.0,
+# Python ingestion (ingestion/load_sample_to_snowflake.py) and the Streamlit dashboard
+#                                              tested: streamlit 1.67.0, snowflake-connector-python 5.2.0,
 streamlit>=1.67,<2                             #         cryptography 50.0.2
 snowflake-connector-python>=5.2,<6
 cryptography>=50

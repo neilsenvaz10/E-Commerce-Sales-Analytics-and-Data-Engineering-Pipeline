@@ -3,15 +3,19 @@
 -- Before running, replace the three <...PUBLIC_KEY> placeholders with the BODY of each public
 -- key: the base64 text without the BEGIN/END lines, on one line. Never paste a PRIVATE key here.
 --
+-- NOTE (comments only; the SQL below is unchanged): Airbyte Cloud could not sync because of a
+-- credit restriction, so a Python loader (ingestion/load_sample_to_snowflake.py) now writes RAW.
+-- It reuses AIRBYTE_USER / AIRBYTE_ROLE and the "airbyte" key; those names are historical.
+--
 -- Layout:  database ECOMMERCE_ANALYTICS
---            RAW             written by Airbyte        (role AIRBYTE_ROLE)
---            AIRBYTE_INTERNAL Airbyte's internal stage (role AIRBYTE_ROLE)
+--            RAW             written by the Python loader (role AIRBYTE_ROLE, historical name)
+--            AIRBYTE_INTERNAL was Airbyte's internal schema; unused now, harmless (role AIRBYTE_ROLE)
 --            STAGING         dbt view  stg_online_retail (role TRANSFORM_ROLE)
 --            ANALYTICS       dbt table fct_sales         (role TRANSFORM_ROLE, read by READER_ROLE)
 
 -- 1. Roles ---------------------------------------------------------------------
 USE ROLE SECURITYADMIN;
-CREATE ROLE IF NOT EXISTS AIRBYTE_ROLE;    -- Airbyte Cloud: writes RAW only
+CREATE ROLE IF NOT EXISTS AIRBYTE_ROLE;    -- (historical name) the Python loader: writes RAW only
 CREATE ROLE IF NOT EXISTS TRANSFORM_ROLE;  -- dbt and Airflow: reads RAW, writes STAGING and ANALYTICS
 CREATE ROLE IF NOT EXISTS READER_ROLE;     -- Streamlit: read-only on ANALYTICS
 GRANT ROLE AIRBYTE_ROLE   TO ROLE SYSADMIN;

@@ -2,7 +2,11 @@ version: 2
 
 sources:
   - name: raw
-    description: Table written by Airbyte Cloud from the 744-row UCI Online Retail sample (CSV).
+    description: >
+      Table RAW.ONLINE_RETAIL_SAMPLE, loaded by ingestion/load_sample_to_snowflake.py from the
+      744-row UCI Online Retail sample CSV. All eight source columns are text, blanks are NULL,
+      nothing is removed. (Airbyte Cloud was configured first but could not sync because of a
+      credit restriction, so Python replaced it.)
     schema: raw
     tables:
       - name: online_retail_sample

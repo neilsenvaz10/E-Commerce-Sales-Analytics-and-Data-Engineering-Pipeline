@@ -8,8 +8,8 @@ Screenshots must be genuine captures saved in `screenshots/`. Only files that ex
 | 2 | `02_dataset_preview.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
 | 3 | `03_dataset_inspection.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
 | 4 | `04_postgres_setup.png` | 3 (PostgreSQL fallback; optional now) | **Pending** (renamed from `04_bigquery_setup.png` after the 2026-11-15 stack revision; show the running container and the schemas) |
-| 5 | `05_airbyte_configuration.png` | 4 | **Pending** (Airbyte is not running yet; see the teammate handover) |
-| 6 | `06_airbyte_sync.png` | 4 | Not captured |
+| 5 | `05_airbyte_configuration.png` | 4 | **Pending.** Evidence for the report: the Airbyte Cloud connection as configured, with the insufficient-credits error that blocked the sync (capture it from your Airbyte Cloud account; do not show keys) |
+| 6 | `06_python_ingestion.png` | 4 | **Pending.** Renamed from `06_airbyte_sync.png`: the terminal output of `python ingestion\load_sample_to_snowflake.py` (shows `LOADED RAW.ONLINE_RETAIL_SAMPLE: 744 rows`), ideally with the table in Snowsight |
 | 7 | `07_dbt_models.png` | 5 | Not captured |
 | 8 | `08_dbt_tests.png` | 5 | Not captured |
 | 9 | `09_airflow_dag.png` | 6 | Not captured |

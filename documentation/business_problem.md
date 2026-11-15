@@ -116,7 +116,7 @@ Raw records are always preserved unchanged in the raw layer. Cleaning happens on
 
 | Component | Role | What it is *not* |
 |---|---|---|
-| Airbyte | Ingests source data into the PostgreSQL `raw` schema | Not a transformation tool here |
+| Airbyte (originally; now a Python loader, see section 18) | Ingests source data into the warehouse `raw` schema | Not a transformation tool here |
 | PostgreSQL | Stores raw, staging, and analytics data (three schemas) and runs SQL | |
 | dbt Core | Transforms data with SQL, tests it, documents it | Not an ingestion tool |
 | Apache Airflow | Orchestrates and monitors the run order | Not a storage or transformation engine |
@@ -130,7 +130,7 @@ See the diagram: [`architecture/pipeline_architecture.md`](../architecture/pipel
 |---|---|
 | Data source | UCI Online Retail Dataset |
 | Language | Python |
-| Ingestion | Airbyte |
+| Ingestion | Airbyte originally; **Python loader since the third revision (section 18)** |
 | Warehouse | PostgreSQL (local, Docker) |
 | Transformation | dbt Core (dbt-postgres adapter) |
 | Orchestration | Apache Airflow |
@@ -185,3 +185,7 @@ See [`postgres_setup.md`](postgres_setup.md) for the new setup.
 ### Second revision (2026-11-15): Snowflake and Airbyte Cloud for the college demo
 
 The college only requires a minimal working pipeline, and running Airbyte locally failed on this laptop's memory. The team therefore chose **Airbyte Cloud (free trial) and Snowflake (free trial)**, no payment details, with a reduced scope: a 744-row sample, one ingestion connection, two dbt models, one Airflow DAG and three predefined Streamlit questions. PostgreSQL is kept as a verified fallback. The business problem, KPI definitions and cleaning decisions are unchanged; the dbt models apply the Phase 2 rules (cancellations, the `A...` financial adjustment, non-product codes). See the [runbook](runbook.md).
+
+### Third revision (2026-11-15): Python ingestion replaces Airbyte Cloud
+
+Airbyte Cloud was set up (File source to Snowflake), but its syncs were blocked by an **insufficient-credits** error. The team will not add a payment method, so ingestion is done by a Python script, `ingestion/load_sample_to_snowflake.py`, that loads the 744-row sample CSV into `RAW.ONLINE_RETAIL_SAMPLE` using the same Snowflake user, role and key-pair login. The original project plan named Airbyte for ingestion; this is a documented deviation. The Snowflake objects named `AIRBYTE_USER` and `AIRBYTE_ROLE` are kept and are now historical names. The load keeps all source values and rows as they are, is repeatable (one transaction, no duplicates, rollback on error), and dbt performs all conversions and cleaning, with the same business rules as before.

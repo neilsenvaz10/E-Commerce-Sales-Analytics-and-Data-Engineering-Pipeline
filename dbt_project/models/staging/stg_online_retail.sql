@@ -1,10 +1,9 @@
 {#-
     Staging: one row per raw line, typed and flagged. No rows are removed here.
-    Column names below are unquoted, so they match Airbyte's upper-case Snowflake columns
-    (INVOICENO, ...). UNVERIFIED until the first real sync: if Airbyte created quoted
-    mixed-case columns ("InvoiceNo"), quote the names here instead.
-    Every value goes through to_varchar() first, so this works whether Airbyte typed the
-    columns as text or as numbers/timestamps.
+    Raw columns are TEXT (loaded by ingestion/load_sample_to_snowflake.py exactly as in the CSV,
+    blanks as NULL), so every number and timestamp is converted explicitly below. A value that
+    does not convert becomes NULL (try_*), and the dbt tests and validate_sample_results catch it.
+    Column names are unquoted, matching the upper-case columns the loader creates (INVOICENO, ...).
 -#}
 with source as (
 
@@ -15,14 +14,14 @@ with source as (
 typed as (
 
     select
-        to_varchar(invoiceno)                                  as invoice_no,
-        to_varchar(stockcode)                                  as stock_code,
-        nullif(trim(to_varchar(description)), '')              as description,
-        try_to_number(to_varchar(quantity))                    as quantity,
-        try_to_timestamp_ntz(to_varchar(invoicedate))          as invoice_ts,
-        try_to_decimal(to_varchar(unitprice), 18, 4)           as unit_price,
-        try_to_number(to_varchar(customerid))                  as customer_id,
-        to_varchar(country)                                    as country
+        invoiceno                                              as invoice_no,        -- stays text (C... / A... prefixes)
+        stockcode                                              as stock_code,
+        nullif(trim(description), '')                          as description,
+        try_to_number(quantity, 38, 0)                         as quantity,          -- whole number
+        try_to_timestamp_ntz(invoicedate, 'YYYY-MM-DD HH24:MI:SS') as invoice_ts,
+        try_to_decimal(unitprice, 18, 4)                       as unit_price,
+        try_to_number(customerid, 38, 0)                       as customer_id,       -- NULL when missing
+        country                                                as country
     from source
 
 )

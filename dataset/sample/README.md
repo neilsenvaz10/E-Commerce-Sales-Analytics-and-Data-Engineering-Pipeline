@@ -1,6 +1,6 @@
 # Sample data: UCI Online Retail (744 rows)
 
-`online_retail_sample.csv` is a small subset of the UCI Online Retail dataset, published so that Airbyte Cloud can read it from a public URL.
+`online_retail_sample.csv` is a small subset of the UCI Online Retail dataset. It is loaded into Snowflake by `ingestion/load_sample_to_snowflake.py` (it was originally published for Airbyte Cloud to read from a public URL, but Airbyte could not sync because of a credit restriction).
 
 **Source and licence**
 

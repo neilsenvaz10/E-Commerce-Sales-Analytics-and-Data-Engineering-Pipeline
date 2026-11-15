@@ -1,4 +1,4 @@
-"""Streamlit dashboard: three predefined business questions answered from Snowflake.
+﻿"""Streamlit dashboard: three predefined business questions answered from Snowflake.
 
 Run (project root, PowerShell):   .\\.venv\\Scripts\\streamlit.exe run streamlit_app\\app.py
 Connects with the read-only READER_USER (key-pair login). Settings come from environment
@@ -72,12 +72,12 @@ def show_answer(question) -> None:
         c3.metric("Order lines", f"{int(row['lines']):,}")
         st.caption("Gross valid-sales revenue (quantity x unit price) before any returns; includes valid postage and fee lines.")
     elif question.key == "top_products":
-        st.dataframe(data, hide_index=True, use_container_width=True)
+        st.dataframe(data, hide_index=True, width="stretch")
         st.caption("Merchandise only: postage, fees, vouchers and manual entries are excluded.")
     else:
         data["revenue"] = data["revenue"].astype(float)
         st.bar_chart(data, x="invoice_month", y="revenue")
-        st.dataframe(data, hide_index=True, use_container_width=True)
+        st.dataframe(data, hide_index=True, width="stretch")
         last = pd.to_datetime(data["invoice_month"]).max()
         last_day = run_query("select max(invoice_ts) as last_ts from fct_sales").iloc[0, 0]
         if last_day is not None and pd.Timestamp(last_day).day < monthrange(last.year, last.month)[1]:
@@ -86,7 +86,7 @@ def show_answer(question) -> None:
 
 st.set_page_config(page_title="E-Commerce Sales Analytics", layout="wide")
 st.title("E-Commerce Sales Analytics")
-st.caption("Pipeline: UCI Online Retail sample (CSV) -> Airbyte Cloud -> Snowflake -> dbt -> Streamlit. "
+st.caption("Pipeline: UCI Online Retail sample (CSV) -> Python loader -> Snowflake -> dbt -> Streamlit. "
            "Data: 744-row sample of the UCI Online Retail dataset (CC BY 4.0), not the full dataset.")
 
 missing = [name for name in REQUIRED if not os.getenv(name)]
@@ -96,7 +96,8 @@ if missing:
 
 st.write("Ask one of the three supported questions, or click an example.")
 cols = st.columns(len(QUESTIONS))
-clicked = next((q for q, col in zip(QUESTIONS, cols) if col.button(q.example, use_container_width=True)), None)
+pressed = [col.button(q.example, width="stretch") for q, col in zip(QUESTIONS, cols)]  # draw all three
+clicked = next((q for q, was_pressed in zip(QUESTIONS, pressed) if was_pressed), None)
 typed = st.text_input("Your question", placeholder="e.g. What is the total revenue?")
 
 question = clicked or (match_question(typed) if typed.strip() else None)

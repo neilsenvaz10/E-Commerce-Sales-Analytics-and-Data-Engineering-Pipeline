@@ -1,7 +1,8 @@
 """Build the 744-row UCI sample CSV for Airbyte Cloud, reproducibly, from the original workbook.
 
-Airbyte Cloud cannot read local files, so the sample is published as a CSV in the repository
-(dataset/sample/) and read from its public GitHub URL.
+The sample is published as a CSV in the repository (dataset/sample/). It was first meant to be
+read by Airbyte Cloud from its public GitHub URL; Airbyte could not sync (credit restriction), so
+ingestion/load_sample_to_snowflake.py now loads this same file into Snowflake.
 
 Selection is deterministic (no randomness) and uses only genuine, unmodified source rows, each
 at most once, with no exact-duplicate content, kept in the original order:

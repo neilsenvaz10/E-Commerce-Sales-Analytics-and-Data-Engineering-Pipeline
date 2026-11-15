@@ -4,8 +4,12 @@
 #   docker compose -f docker-compose.airflow.yml up -d --build
 #   docker compose -f docker-compose.airflow.yml down        (no -v needed; nothing to keep)
 #
-# Reads AIRBYTE_* and SNOWFLAKE_* from .env and needs dbt_project/profiles.yml
-# (copy of profiles.yml.example). See documentation/runbook.md.
+# Reads SNOWFLAKE_* from .env and needs dbt_project/profiles.yml (copy of profiles.yml.example).
+# Two SEPARATE private keys are mounted read-only from your machine (their contents are never
+# copied into the image, the repo or the logs):
+#   - the dbt key       (TRANSFORM_USER)  -> /run/keys/dbt_key.p8
+#   - the ingestion key (AIRBYTE_USER, a historical name for the Python loader) -> /run/keys/ingest_key.p8
+# See documentation/runbook.md.
 name: ecommerce_airflow
 
 services:
@@ -16,20 +20,28 @@ services:
     container_name: ecommerce_airflow
     command: standalone
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8080"   # host port 8081: 8080 is used by another program on this machine
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      AIRBYTE_API_URL: ${AIRBYTE_API_URL:-https://api.airbyte.com/v1}
-      AIRBYTE_CLIENT_ID: ${AIRBYTE_CLIENT_ID:?set AIRBYTE_CLIENT_ID in .env}
-      AIRBYTE_CLIENT_SECRET: ${AIRBYTE_CLIENT_SECRET:?set AIRBYTE_CLIENT_SECRET in .env}
-      AIRBYTE_CONNECTION_ID: ${AIRBYTE_CONNECTION_ID:?set AIRBYTE_CONNECTION_ID in .env}
       SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:?set SNOWFLAKE_ACCOUNT in .env}
+      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE:-ECOMMERCE_ANALYTICS}
+      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE:-ECOMMERCE_WH}
+      # dbt login (container path of the mounted dbt key)
       SNOWFLAKE_DBT_USER: ${SNOWFLAKE_DBT_USER:-TRANSFORM_USER}
-      SNOWFLAKE_DBT_PRIVATE_KEY_PATH: /run/keys/dbt_key.p8   # container path of the mounted key
+      SNOWFLAKE_DBT_PRIVATE_KEY_PATH: /run/keys/dbt_key.p8
+      # ingestion login (container path of the mounted ingestion key)
+      SNOWFLAKE_INGEST_USER: ${SNOWFLAKE_INGEST_USER:-AIRBYTE_USER}
+      SNOWFLAKE_INGEST_PRIVATE_KEY_PATH: /run/keys/ingest_key.p8
+      INGEST_PYTHON: /home/airflow/dbt-venv/bin/python
+      INGEST_SCRIPT: /opt/airflow/ingestion/load_sample_to_snowflake.py
+      INGEST_CSV_PATH: /opt/airflow/dataset/sample/online_retail_sample.csv
       DBT_BIN: /home/airflow/dbt-venv/bin/dbt
       DBT_PROJECT_DIR: /opt/airflow/dbt_project
     volumes:
       - ./airflow/dags:/opt/airflow/dags:ro
       - ./dbt_project:/opt/airflow/dbt_project
-      # host path of the TRANSFORM_USER private key, kept outside the repo (use forward slashes)
+      - ./ingestion/load_sample_to_snowflake.py:/opt/airflow/ingestion/load_sample_to_snowflake.py:ro
+      - ./dataset/sample:/opt/airflow/dataset/sample:ro
+      # host paths of the private keys, kept outside the repo (use forward slashes in .env)
       - ${SNOWFLAKE_DBT_PRIVATE_KEY_PATH:?set SNOWFLAKE_DBT_PRIVATE_KEY_PATH in .env}:/run/keys/dbt_key.p8:ro
+      - ${SNOWFLAKE_INGEST_PRIVATE_KEY_PATH:?set SNOWFLAKE_INGEST_PRIVATE_KEY_PATH in .env}:/run/keys/ingest_key.p8:ro

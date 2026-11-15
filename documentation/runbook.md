@@ -1,53 +1,62 @@
-# Runbook: college demo (Airbyte Cloud + Snowflake)
+# Runbook: college demo (Python ingestion + Snowflake)
 
-Status: **prepared, not yet run.** No Airbyte Cloud or Snowflake account exists. Do the steps in order. Never paste keys, secrets or `.env` values into chat or commits.
+Status: the loader (744 rows), dbt (run, 5 tests, validation) and Streamlit have run against Snowflake and passed. **Airflow is partly working:** the ingestion task succeeds, but `dbt run` fails inside the container with a dbt parse-cache `KeyError`, because the Windows-made `dbt_project/target/partial_parse.msgpack` clashes with the Linux container. Until the DAG is fixed (add `--no-partial-parse`, or delete that cache file before running Airflow), run the dbt steps in section 4 from the host. Do the steps in order. Never paste keys, secrets or `.env` values into chat or commits.
 
-## 1. Accounts (free trials, no payment details)
-- **Snowflake** (30-day trial starts at signup): sign up at signup.snowflake.com with an email, skip any payment prompt, set up MFA for your own login, and note the account identifier (Snowsight: your name > Account > View account details).
-- **Airbyte Cloud** (14-day trial starts at your **first successful sync**, so do this last): sign up, create a workspace, check that the **File** source and **Snowflake** destination are available, and create an application (User settings > Applications) to get a client ID and secret.
+**Why Python and not Airbyte:** Airbyte Cloud was configured (File source to Snowflake) but could not sync because of an insufficient-credits restriction. The team will not add a payment method, so a Python loader replaced Airbyte. The Snowflake names `AIRBYTE_USER` and `AIRBYTE_ROLE` are historical: they are now the Python loader's identity, with the `airbyte` key.
 
-## 2. Keys (PowerShell; keep the files outside the repo)
+## 1. Snowflake (already done)
+`snowflake/setup.sql` created the warehouse, database `ECOMMERCE_ANALYTICS`, schemas `RAW`, `AIRBYTE_INTERNAL`, `STAGING`, `ANALYTICS`, three roles and three key-pair service users. Keys are in `C:\Users\<you>\.snowflake\` (outside the repo), created by `snowflake\make_keys.ps1`. The Snowflake trial lasts 30 days from signup; after that the account is suspended.
+
+## 2. Local settings
+Copy `.env.example` to `.env` and fill in `SNOWFLAKE_ACCOUNT` (Snowsight: your name > Account > View account details) and the three key paths (forward slashes). Copy `dbt_project/profiles.yml.example` to `dbt_project/profiles.yml`.
+
+## 3. Check the loader offline, then read-only
 ```powershell
-$ssl = 'C:\Program Files\Git\usr\bin\openssl.exe'
-New-Item -ItemType Directory -Force "$HOME\.snowflake" | Out-Null
-foreach ($n in 'airbyte','transform','reader') {
-  & $ssl genrsa -out "$HOME\.snowflake\$($n)_rsa.pem" 2048
-  & $ssl pkcs8 -topk8 -inform PEM -in "$HOME\.snowflake\$($n)_rsa.pem" -out "$HOME\.snowflake\$($n)_key.p8" -nocrypt
-  & $ssl rsa -in "$HOME\.snowflake\$($n)_key.p8" -pubout -out "$HOME\.snowflake\$($n)_key.pub"
-}
+.\.venv\Scripts\python.exe ingestion\load_sample_to_snowflake.py --dry-run   # offline: validates the 744-row CSV
+.\.venv\Scripts\python.exe ingestion\test_load_sample.py                      # offline tests with a fake connection
+.\.venv\Scripts\python.exe ingestion\load_sample_to_snowflake.py --check     # first Snowflake contact: READ-ONLY
 ```
-Open each `.pub` file and copy the text **between** the BEGIN/END lines as one line.
+`--check` logs in as `AIRBYTE_USER`, prints the user, role, database and warehouse, lists the table names in `RAW` and `AIRBYTE_INTERNAL`, and says whether `RAW.ONLINE_RETAIL_SAMPLE` is absent, created by the loader, or unexpected. It changes nothing.
 
-## 3. Snowflake setup
-Paste [`snowflake/setup.sql`](../snowflake/setup.sql) into a Snowsight worksheet, replace the three `<...PUBLIC_KEY>` placeholders with those one-line public keys, and run it as `ACCOUNTADMIN`. Then run `DESC USER AIRBYTE_USER;` and check that `RSA_PUBLIC_KEY_FP` is filled in (same for the other two users).
-
-## 4. Airbyte Cloud connection (one source, one destination, one connection)
-- **Source: File.** Provider HTTPS, URL `https://raw.githubusercontent.com/neilsenvaz10/E-Commerce-Sales-Analytics-and-Data-Engineering-Pipeline/main/dataset/sample/online_retail_sample.csv` (works once the file is pushed to GitHub), format `csv`, dataset name `online_retail_sample`, reader options `{"dtype": "string"}` so `InvoiceNo` stays text.
-- **Destination: Snowflake.** Host `<account>.snowflakecomputing.com`, role `AIRBYTE_ROLE`, warehouse `ECOMMERCE_WH`, database `ECOMMERCE_ANALYTICS`, default schema `RAW`, internal table schema `AIRBYTE_INTERNAL`, user `AIRBYTE_USER`, key-pair auth (paste the private key from `airbyte_key.p8` into the Airbyte form yourself).
-- **Connection:** sync mode **Full Refresh | Overwrite**, schedule **manual**. Copy the connection ID from the page URL into `.env`.
-- Open question to check at the first sync: if Airbyte's connection test needs `CREATE SCHEMA` on the database, tell the project owner (do not grant it silently).
-
-## 5. Local settings
-Copy `.env.example` to `.env` and fill in the `AIRBYTE_*` and `SNOWFLAKE_*` values (key paths with forward slashes). Copy `dbt_project/profiles.yml.example` to `dbt_project/profiles.yml`.
-
-## 6. Run the pieces
+## 4. Load, transform, validate
 ```powershell
-# dbt on its own (separate environment)
+# load RAW.ONLINE_RETAIL_SAMPLE (creates it if absent; replaces all rows in one transaction; safe to repeat)
+.\.venv\Scripts\python.exe ingestion\load_sample_to_snowflake.py
+
+# dbt (separate environment)
 <python-3.12> -m venv .venv-dbt
 .\.venv-dbt\Scripts\python.exe -m pip install -r dbt_project\requirements.txt
-cd dbt_project ; ..\.venv-dbt\Scripts\dbt.exe run ; ..\.venv-dbt\Scripts\dbt.exe test ; cd ..
+cd dbt_project
+..\.venv-dbt\Scripts\dbt.exe run
+..\.venv-dbt\Scripts\dbt.exe test
+..\.venv-dbt\Scripts\dbt.exe run-operation validate_sample_results
+cd ..
+```
+The loader refuses to touch a table it did not create, and it never uses `CREATE OR REPLACE`. If it reports an unexpected table, stop and ask the project owner.
 
+## 5. Airflow and Streamlit
+```powershell
 # Airflow (Docker Desktop must be running; build takes several minutes)
 docker compose -f docker-compose.airflow.yml up -d --build
-# open http://localhost:8080 , unpause and trigger the DAG "ecommerce_pipeline"
+# open http://localhost:8081 (host port 8081; 8080 was already used on the original machine),
+# unpause and trigger the DAG "ecommerce_pipeline" once
 
 # Streamlit
-.\.venv\Scripts\streamlit.exe run streamlit_app\app.py
+.\.venv\Scripts\streamlit.exe run streamlit_app\app.py --server.address 127.0.0.1
 ```
-Expected: the DAG shows 5 green tasks; Snowflake has `RAW.ONLINE_RETAIL_SAMPLE` (744 rows), view `STAGING.STG_ONLINE_RETAIL` and table `ANALYTICS.FCT_SALES`; the app answers the three questions.
+Always pass `--server.address 127.0.0.1`: without it Streamlit listens on every network interface and prints a LAN and an external URL, which would expose a page that can query Snowflake. Open http://127.0.0.1:8501.
+The DAG runs: `ingest_sample` → `dbt_run` → `dbt_test` → `validate_results`. Airflow mounts the dbt key and the ingestion key as two separate read-only files; their contents are never copied or logged.
 
-## 7. Check the results against a local calculation
-`python ingestion\make_sample_csv.py` prints these expected values for the sample (same rules as `fct_sales`): **597** `fct_sales` rows (15 of them non-product charges), **72** orders, total revenue **10,210.21**, and revenue in 13 months:
+## 6. Expected results for the sample
+`validate_sample_results` fails if any of these differ (from `python ingestion\make_sample_csv.py` and an independent pandas check):
+
+| Check | Expected |
+|---|---|
+| Raw rows | **744** |
+| Valid-sales rows (`fct_sales`) | **597** (15 are non-product charges) |
+| Distinct orders | **72** |
+| Total revenue | **10,210.21** |
+| Months with valid sales | **13** |
 
 | Month | Revenue | Month | Revenue | Month | Revenue |
 |---|---|---|---|---|---|
@@ -57,7 +66,5 @@ Expected: the DAG shows 5 green tasks; Snowflake has `RAW.ONLINE_RETAIL_SAMPLE` 
 | 2011-03 | 675.88 | 2011-08 | 1,009.18 | | |
 | 2011-04 | 1,147.94 | 2011-09 | 295.43 | | |
 
-If Snowflake differs, investigate before trusting the dashboard.
-
-## 8. Before the trials end
-Capture the screenshots in [screenshot_checklist.md](screenshot_checklist.md) and, if possible, a short screen recording, while the accounts are active. After the Airbyte trial (14 days) a card is needed to keep syncing; after the Snowflake trial (30 days) the account is suspended.
+## 7. Before the trial ends
+Capture the screenshots in [screenshot_checklist.md](screenshot_checklist.md) (including the Airbyte Cloud credit error as evidence) and, if possible, a short screen recording, while the Snowflake account is active.

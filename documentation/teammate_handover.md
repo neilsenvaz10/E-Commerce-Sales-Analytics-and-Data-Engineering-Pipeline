@@ -1,6 +1,8 @@
 # Teammate Handover
 
-> **Update (2026-11-15, later):** the plan was simplified to the college minimum: the 744-row sample, **Airbyte Cloud + Snowflake** (free trials), two dbt models, one Airflow DAG and a three-question Streamlit app. The local-Airbyte (`abctl`) attempt described in sections 4 to 6 below is **no longer the plan**, and the local PostgreSQL warehouse is only a fallback. Follow [runbook.md](runbook.md) and the [README](../README.md) instead. The rest of this page is kept as history.
+> **Update (2026-11-15, latest):** Airbyte Cloud could not sync (insufficient credits, no payment method added), so **Python ingestion** (`ingestion/load_sample_to_snowflake.py`) loads the sample into Snowflake instead. Everything about Airbyte below, and the Airbyte Cloud mentions in the earlier update, is history.
+>
+> **Update (2026-11-15, earlier):** the plan was simplified to the college minimum: the 744-row sample, **Airbyte Cloud + Snowflake** (free trials), two dbt models, one Airflow DAG and a three-question Streamlit app. The local-Airbyte (`abctl`) attempt described in sections 4 to 6 below is **no longer the plan**, and the local PostgreSQL warehouse is only a fallback. Follow [runbook.md](runbook.md) and the [README](../README.md) instead. The rest of this page is kept as history.
 
 Last updated: 2026-11-15. Written so a teammate can clone the repository and continue. Everything below reflects what was actually done and verified; anything not done is stated as not done.
 
