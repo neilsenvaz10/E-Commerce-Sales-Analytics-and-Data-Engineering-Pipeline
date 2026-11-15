@@ -7,7 +7,7 @@ Screenshots must be genuine captures saved in `screenshots/`. Only files that ex
 | 1 | `01_business_problem.png` | 1 | **Pending — deferred to Phase 8** (approved by the team; capture the VS Code Markdown preview of `documentation/business_problem.md`) |
 | 2 | `02_dataset_preview.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
 | 3 | `03_dataset_inspection.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
-| 4 | `04_bigquery_setup.png` | 3 | **Pending** (needs a real BigQuery project, which does not exist yet) |
+| 4 | `04_postgres_setup.png` | 3 | **Pending** (renamed from `04_bigquery_setup.png` after the 2026-11-15 stack revision; show the running container and the schemas) |
 | 5 | `05_airbyte_configuration.png` | 4 | Not captured |
 | 6 | `06_airbyte_sync.png` | 4 | Not captured |
 | 7 | `07_dbt_models.png` | 5 | Not captured |

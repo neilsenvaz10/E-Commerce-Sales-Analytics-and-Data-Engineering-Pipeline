@@ -1,4 +1,10 @@
-"""Read-only BigQuery connection test (Phase 3).
+"""ARCHIVED (2026-11-15): superseded by ingestion/test_postgres_connection.py.
+
+BigQuery was replaced by a local PostgreSQL warehouse. This script was never run
+against a real project (none existed) and its google-cloud-bigquery dependency was
+removed from requirements.txt. Kept only as a record.
+
+Read-only BigQuery connection test (Phase 3).
 
 Checks, in order:
   1. required settings are present in .env / environment
@@ -65,6 +71,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only BigQuery connection test")
     parser.add_argument("--readonly", action="store_true",
                         help="use STREAMLIT_BQ_CREDENTIALS instead of GOOGLE_APPLICATION_CREDENTIALS")
+    parser.add_argument("--write-test", action="store_true",
+                        help="also probe table/view creation, load jobs and DML in the staging dataset "
+                             "(creates and removes tiny temporary objects)")
     args = parser.parse_args()
 
     load_dotenv(PROJECT_ROOT / ".env")
@@ -103,11 +112,55 @@ def main() -> int:
             ok = False
             continue
         same = ds.location.upper() == location.upper()
-        print(f"dataset {name}: found, location={ds.location}" + ("" if same else f"  MISMATCH (expected {location})"))
+        expiry_ms = ds.default_table_expiration_ms
+        expiry = f"{expiry_ms / 86_400_000:g} days" if expiry_ms else "none"
+        print(f"dataset {name}: found, location={ds.location}, default table expiration={expiry}"
+              + ("" if same else f"  MISMATCH (expected {location})"))
         ok = ok and same
 
     print("RESULT:", "PASS" if ok else "FAIL")
+    if args.write_test:
+        write_probes(client, project_id, os.getenv("BQ_STAGING_DATASET") or os.environ["BQ_RAW_DATASET"])
     return 0 if ok else 1
+
+
+def probe(label: str, action) -> bool:
+    """Run one capability probe and report the real outcome (never raises)."""
+    try:
+        action()
+        print(f"probe {label}: OK")
+        return True
+    except Exception as exc:
+        print(f"probe {label}: FAILED ({type(exc).__name__}: {str(exc).splitlines()[0][:200]})")
+        return False
+
+
+def write_probes(client: bigquery.Client, project_id: str, dataset: str) -> None:
+    """Informational capability probes in one dataset. Creates then removes tiny test objects.
+
+    These show which features the project allows (the Sandbox blocks DML and streaming).
+    A FAILED probe is a finding, not a script error.
+    """
+    base = f"`{project_id}.{dataset}`"
+    table, view, loaded = f"{base}._phase3_ctas", f"{base}._phase3_view", f"{base}._phase3_load"
+    print(f"\n--- capability probes in dataset {dataset} (temporary objects, removed afterwards) ---")
+    probe("CREATE TABLE AS SELECT (DDL)", lambda: client.query(
+        f"CREATE OR REPLACE TABLE {table} AS SELECT 1 AS id, 'a' AS v").result())
+    probe("SELECT from created table", lambda: (
+        lambda rows: None if rows and rows[0]["id"] == 1 else (_ for _ in ()).throw(ValueError("bad row"))
+    )(list(client.query(f"SELECT id FROM {table}").result())))
+    probe("CREATE VIEW (DDL)", lambda: client.query(
+        f"CREATE OR REPLACE VIEW {view} AS SELECT id, v FROM {table}").result())
+    probe("SELECT from view", lambda: list(client.query(f"SELECT * FROM {view}").result()))
+    probe("load job from JSON rows", lambda: client.load_table_from_json(
+        [{"id": 1, "v": "a"}], f"{project_id}.{dataset}._phase3_load",
+        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE", autodetect=True)).result())
+    probe("DML INSERT", lambda: client.query(f"INSERT INTO {table} (id, v) VALUES (2, 'b')").result())
+    probe("DML MERGE", lambda: client.query(
+        f"MERGE {table} T USING (SELECT 1 AS id, 'z' AS v) S ON T.id = S.id "
+        "WHEN MATCHED THEN UPDATE SET v = S.v").result())
+    for obj, kind in ((view, "VIEW"), (table, "TABLE"), (loaded, "TABLE")):
+        probe(f"cleanup DROP {kind}", lambda o=obj, k=kind: client.query(f"DROP {k} IF EXISTS {o}").result())
 
 
 if __name__ == "__main__":

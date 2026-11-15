@@ -9,7 +9,7 @@
 
 E-commerce businesses generate transaction data with every customer purchase. This data holds useful information about product sales, customer activity, revenue, and geographical purchasing patterns. Analysing it helps a business understand its sales performance and make better decisions.
 
-This project builds an automated data engineering pipeline using Airbyte, Google BigQuery, dbt, Apache Airflow, and Streamlit.
+This project builds an automated data engineering pipeline using Airbyte, PostgreSQL, dbt, Apache Airflow, and Streamlit.
 
 ## 2. Business Scenario
 
@@ -23,7 +23,7 @@ A reliable pipeline is needed to ingest, clean, transform, and organise transact
 
 ## 4. Problem Statement
 
-To design and implement an automated data engineering pipeline that processes real e-commerce transaction data, stores it in Google BigQuery, transforms it using dbt, and provides business insights through an interactive Streamlit dashboard.
+To design and implement an automated data engineering pipeline that processes real e-commerce transaction data, stores it in a PostgreSQL data warehouse, transforms it using dbt, and provides business insights through an interactive Streamlit dashboard.
 
 The system will help users analyse revenue, product performance, customer activity, and monthly sales trends.
 
@@ -31,7 +31,7 @@ The system will help users analyse revenue, product performance, customer activi
 
 1. Collect genuine e-commerce transaction data from the UCI Online Retail Dataset.
 2. Ingest the records using Airbyte.
-3. Store raw data in Google BigQuery.
+3. Store raw data in a PostgreSQL data warehouse.
 4. Clean and transform the data using dbt and SQL.
 5. Automate pipeline execution using Apache Airflow.
 6. Build an interactive Streamlit dashboard.
@@ -116,8 +116,8 @@ Raw records are always preserved unchanged in the raw layer. Cleaning happens on
 
 | Component | Role | What it is *not* |
 |---|---|---|
-| Airbyte | Ingests source data into BigQuery raw tables | Not a transformation tool here |
-| Google BigQuery | Stores raw, staging, and analytics data and runs SQL | |
+| Airbyte | Ingests source data into the PostgreSQL `raw` schema | Not a transformation tool here |
+| PostgreSQL | Stores raw, staging, and analytics data (three schemas) and runs SQL | |
 | dbt Core | Transforms data with SQL, tests it, documents it | Not an ingestion tool |
 | Apache Airflow | Orchestrates and monitors the run order | Not a storage or transformation engine |
 | Streamlit | Presents the dashboard and conversational interface | Reads analytics tables only |
@@ -131,15 +131,15 @@ See the diagram: [`architecture/pipeline_architecture.md`](../architecture/pipel
 | Data source | UCI Online Retail Dataset |
 | Language | Python |
 | Ingestion | Airbyte |
-| Warehouse | Google BigQuery |
-| Transformation | dbt Core (BigQuery adapter) |
+| Warehouse | PostgreSQL (local, Docker) |
+| Transformation | dbt Core (dbt-postgres adapter) |
 | Orchestration | Apache Airflow |
 | Dashboard | Streamlit |
 | Environment | VS Code, Windows 11, Docker Desktop, WSL2, Git |
 
 ## 14. Scope
 
-**In scope:** historical transaction analysis, revenue reporting, product performance, customer counts, geographical sales insights, and a dashboard answering the eight questions from transformed BigQuery data.
+**In scope:** historical transaction analysis, revenue reporting, product performance, customer counts, geographical sales insights, and a dashboard answering the eight questions from transformed PostgreSQL data.
 
 **Out of scope:** live or streaming data, customer segmentation, forecasting, return/refund analysis (unless added later), and unrestricted natural-language-to-SQL.
 
@@ -156,8 +156,28 @@ See the diagram: [`architecture/pipeline_architecture.md`](../architecture/pipel
 
 - The UCI dataset is available from its official page: https://archive.ics.uci.edu/dataset/352/online+retail
 - The dataset has the expected columns listed above (**unverified until Phase 2**).
-- Free-tier or low-cost Google Cloud usage will be sufficient (to be explained and approved in Phase 3).
+- A local Docker PostgreSQL warehouse is sufficient for about 540,000 rows at no cost (revised 2026-11-15; originally Google Cloud free-tier usage was assumed, see Section 18).
 
 ## 17. Phase 1 Conclusion
 
 Phase 1 sets out the business problem, objectives, users, questions, metrics, preliminary quality rules, and architecture roles. Dataset-specific assumptions are verified in Phase 2 before any transformation is built.
+
+## 18. Stack Revision (2026-11-15): BigQuery replaced by PostgreSQL
+
+**Change:** the data warehouse was changed from Google BigQuery to a local PostgreSQL database run in Docker. dbt now uses the `dbt-postgres` adapter. Everything else in the stack is unchanged (UCI dataset, Python, Airbyte, dbt Core, Apache Airflow, Streamlit, Docker Desktop, Git).
+
+**Decided by:** the project team, on 2026-11-15.
+
+**Reasons**
+- This is an academic mini project, and the team will not link a billing account or provide payment details.
+- Without billing, BigQuery would run only in the Sandbox, which does not support DML or streaming inserts and expires tables after 60 days ([Google: BigQuery sandbox](https://docs.cloud.google.com/bigquery/docs/sandbox)). Airbyte's BigQuery destination could not be confirmed to work under those limits.
+- Cloud authentication (user login or service-account keys) added setup risk and was not needed for the learning goals.
+- A local PostgreSQL warehouse costs nothing, has no expiry, supports normal SQL including DML, and is supported by Airbyte (destination) and dbt (adapter).
+
+**What did not change:** the business problem, objectives, the eight business questions, all KPI definitions, the dataset findings in Phase 2, and every approved data-cleaning decision. References to "BigQuery" in Sections 1 to 16 were updated to PostgreSQL; no business meaning changed.
+
+**What BigQuery work actually existed:** placeholder configuration only. No Google Cloud project, billing account, dataset, credential or connection was ever created or tested. The earlier plan is archived in [`archive/bigquery_setup.md`](archive/bigquery_setup.md).
+
+**Trade-off:** PostgreSQL is a row-store database, not a cloud data warehouse. Airbyte's documentation suggests using it for smaller volumes (roughly 10 GB or less), which is far above this project's size (about 540,000 rows).
+
+See [`postgres_setup.md`](postgres_setup.md) for the new setup.

@@ -1,21 +1,20 @@
 # Project virtual environment: Python 3.12 (.venv, not committed).
-# The system Python (3.14) is NOT used. dbt Core / Airflow / Airbyte tooling
-# compatibility is verified in later phases; those packages are not listed yet.
-# Versions marked "tested" were installed together in the project venv and
-# `pip check` reported no conflicts. Ranges are lower-bounded, not frozen.
+# The system Python (3.14) is NOT used. Versions marked "tested" were installed
+# together in the project venv and `pip check` reported no conflicts.
 
 # Dataset inspection (Phase 2)        tested: pandas 3.1.1, openpyxl 3.1.5
 pandas>=3.1,<4
 openpyxl>=3.1,<4
 
-# BigQuery connection test (Phase 3)  tested: google-cloud-bigquery 3.47.0,
-#                                     python-dotenv 1.2.4, db-dtypes 1.9.0
-google-cloud-bigquery>=3.47,<4
+# PostgreSQL connection test and Streamlit (Phase 3, 7)
 python-dotenv>=1.2,<2
-db-dtypes>=1.9,<2
+psycopg[binary]>=3.3,<4
 
-# Transformation (Phase 5) - not installed, version to be confirmed
-# dbt-bigquery
+# dbt (Phase 5) - NOT installed yet; will live in its own environment.
+# A dry run resolved dbt-postgres 1.11.0 together with a PRE-RELEASE dbt-core
+# (1.13.0b1), so a stable dbt-core must be pinned and re-checked first.
+# dbt-postgres
 
-# Dashboard (Phase 7) - not installed, version to be confirmed
+# Airflow (Phase 6) runs from the official Docker image, not from this venv.
+# Streamlit (Phase 7) - not installed yet, version to be confirmed.
 # streamlit

@@ -1,3 +1,5 @@
+> **ARCHIVED (2026-11-15).** This BigQuery plan is superseded by the PostgreSQL warehouse; see [../postgres_setup.md](../postgres_setup.md) and the stack revision note in [../business_problem.md](../business_problem.md). BigQuery was never set up: no Google Cloud project, datasets or credentials were ever created, and no connection was ever tested. This file is kept as a record only.
+
 # BigQuery Setup (Phase 3: preparation only)
 
 ## 0. Status: what is real and what is not

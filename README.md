@@ -6,7 +6,7 @@ A Data Engineering microproject (5th semester, two-member team) that demonstrate
 
 ## Project Overview
 
-The project processes historical e-commerce transactions from the UCI Online Retail Dataset and converts them into business insights. Airbyte ingests the data, Google BigQuery stores it, dbt transforms it, Apache Airflow orchestrates the workflow, and Streamlit presents interactive analytics.
+The project processes historical e-commerce transactions from the UCI Online Retail Dataset and converts them into business insights. Airbyte ingests the data, a local PostgreSQL warehouse stores it, dbt transforms it, Apache Airflow orchestrates the workflow, and Streamlit presents interactive analytics.
 
 ## Business Objectives
 
@@ -19,7 +19,9 @@ The project processes historical e-commerce transactions from the UCI Online Ret
 
 ## Technology Stack
 
-Python, Airbyte, Google BigQuery, dbt Core, Apache Airflow, Streamlit, Docker Desktop, WSL2, Git, and VS Code.
+Python, Airbyte, PostgreSQL (Docker), dbt Core (dbt-postgres), Apache Airflow, Streamlit, Docker Desktop, WSL2, Git, and VS Code.
+
+> **Stack revision (2026-11-15):** the warehouse was changed from Google BigQuery to local PostgreSQL because the project uses no billing account or cloud authentication. Reasons and impact: [documentation/business_problem.md](documentation/business_problem.md), section 18.
 
 ## Data Source
 
@@ -28,7 +30,7 @@ https://archive.ics.uci.edu/dataset/352/online+retail
 
 ## Pipeline Architecture
 
-UCI Online Retail Dataset → Airbyte → BigQuery Raw Tables → dbt → BigQuery Analytics Tables → Streamlit Dashboard
+UCI Online Retail Dataset → Airbyte → PostgreSQL `raw` schema → dbt → PostgreSQL `staging` and `analytics` schemas → Streamlit Dashboard
 
 Apache Airflow orchestrates ingestion, transformation, and validation. It does not store or transform data. See [architecture/pipeline_architecture.md](architecture/pipeline_architecture.md) for the Mermaid diagram.
 
@@ -53,7 +55,7 @@ Revenue means gross valid positive sales (`Quantity × UnitPrice`) before return
 
 1. Business Problem Definition
 2. Dataset Collection and Inspection
-3. Google BigQuery Setup
+3. PostgreSQL Warehouse Setup (replaces Google BigQuery Setup)
 4. Airbyte Data Ingestion
 5. dbt Data Transformation
 6. Apache Airflow Orchestration
@@ -67,17 +69,17 @@ Revenue means gross valid positive sales (`Quantity × UnitPrice`) before return
 | Workspace preparation | Complete |
 | 1. Business Problem Definition | Complete — screenshot deferred (`01_business_problem.png` to be captured in Phase 8) |
 | 2. Dataset Collection and Inspection | Complete — screenshots `02` and `03` deferred to Phase 8 |
-| 3. Google BigQuery Setup | **Preparation only (partial).** Placeholder configuration, setup guide and connection test script written. No Google Cloud project, datasets, keys or connection exist or have been tested. |
-| 4. Airbyte Data Ingestion | **Blocked** until a genuine BigQuery environment is available |
+| 3. PostgreSQL Warehouse Setup | **Verified** — container healthy, database, schemas and roles created, connection and privilege test passed 26/26 (screenshot `04_postgres_setup.png` pending) |
+| 4. Airbyte Data Ingestion | Not started (awaiting approval) |
 | 5–8 | Not started |
 
-- Folder structure, `.gitignore`, `.env.example`, and a placeholder `requirements.txt` are in place.
-- No Python packages, containers, Airbyte, Airflow, or cloud services have been installed or configured.
+- Folder structure, `.gitignore`, `.env.example`, `docker-compose.yml` and the warehouse init SQL are in place.
+- Airbyte, Airflow and dbt are not installed. No cloud services are used.
 - The genuine UCI workbook is stored in `dataset/original/` (not committed to Git) and has been inspected: 541,909 rows, 8 columns. See [documentation/dataset_description.md](documentation/dataset_description.md).
 - Cleaning rules remain provisional until implemented in dbt (Phase 5). Recorded team decisions: (1) keep exact duplicate rows (possible revenue overstatement up to 0.23%); (2) keep valid non-product charges in gross valid-sales revenue but exclude a verified stock-code list from merchandise product rankings; (3) keep invoice `A563185` in raw data but classify its +11,062.06 bad-debt adjustment as a financial adjustment, excluded from gross valid-sales revenue and product rankings (refined revenue 10,655,622.48 versus 10,666,684.54 provisional); (4) the highest-revenue month compares complete months only (Dec 2010 to Nov 2011); (5) the monthly trend shows all months, with December 2011 labelled as a partial month (data ends 9 Dec 2011). The inspection results file keeps the provisional figures as historical evidence. Details: [documentation/dataset_description.md](documentation/dataset_description.md).
-- A Python 3.12 virtual environment (`.venv`, not committed) holds pandas, openpyxl and the BigQuery client packages. Airbyte, dbt and Airflow are not installed.
-- **BigQuery is not set up.** By team decision no billing account or payment method is used, so only the BigQuery Sandbox route is available. Proposed names (not created): location `asia-south1`; datasets `raw_online_retail`, `staging_online_retail`, `analytics_online_retail`. All values in `.env.example` and `dbt_project/profiles.yml.example` are dummy placeholders. Sandbox limitations (60-day table expiry, no DML or streaming) and unverified Airbyte/dbt compatibility are documented in [documentation/bigquery_setup.md](documentation/bigquery_setup.md).
-- Phase 3 cannot be completed or verified until a real BigQuery project exists. Phase 4 is blocked on that, pending the team's decision.
+- A Python 3.12 virtual environment (`.venv`, not committed) holds pandas, openpyxl, python-dotenv and psycopg.
+- **PostgreSQL warehouse (Phase 3):** database `ecommerce_analytics` with schemas `raw`, `staging`, `analytics` and three least-privilege roles (`airbyte_user`, `dbt_user`, `streamlit_ro`), defined in `docker-compose.yml` and `docker/postgres/`. It runs in Docker on host port **5434** (127.0.0.1 only), chosen because 5432 is used by a Windows PostgreSQL service and 5433 by another local Docker project. Real test results are in [documentation/postgres_setup.md](documentation/postgres_setup.md). Setup and test steps: [documentation/postgres_setup.md](documentation/postgres_setup.md).
+- The archived BigQuery plan (never set up) is kept in [documentation/archive/](documentation/archive/) and `ingestion/archive/`.
 - Screenshot tracking: see [documentation/screenshot_checklist.md](documentation/screenshot_checklist.md).
 
 ## Project Structure
@@ -85,8 +87,11 @@ Revenue means gross valid positive sales (`Quantity × UnitPrice`) before return
 ```text
 dataset/original/        Original UCI workbook (not committed)
 dataset/processed/       Derived ingestion-ready files (not committed)
+docker-compose.yml       Local PostgreSQL warehouse
+docker/postgres/         Warehouse init script and SQL (schemas, roles)
 ingestion/configuration/ Airbyte configuration
-dbt_project/             dbt models (staging, marts) and tests
+ingestion/               PostgreSQL connection test (archive/ holds the retired BigQuery one)
+dbt_project/             dbt models (staging, marts), tests, profiles.yml.example
 airflow/                 DAGs and logs
 streamlit_app/           Dashboard (pages, components, queries)
 architecture/            Architecture diagrams
@@ -96,7 +101,7 @@ documentation/           Phase notes and reports
 
 ## Configuration and Security
 
-Copy `.env.example` to `.env` and fill in real values locally. The values in `.env.example` are dummy placeholders. `.env`, service account keys, and dbt `profiles.yml` are excluded from Git. Keep key files outside the project folder and never commit credentials.
+Copy `.env.example` to `.env` and replace every `change-me` with your own strong password. The values in `.env.example` are placeholders only. `.env` and dbt `profiles.yml` are excluded from Git. Never commit or share credentials.
 
 ## Project Team
 
@@ -105,7 +110,7 @@ Two-member Data Engineering microproject.
 ## Documentation
 
 - [Phase 1: Business Problem Definition](documentation/business_problem.md)
-- [Phase 3: BigQuery setup plan (preparation only)](documentation/bigquery_setup.md)
+- [Phase 3: PostgreSQL warehouse setup](documentation/postgres_setup.md)
 - [Phase 2: Dataset description and findings](documentation/dataset_description.md)
 - [Raw inspection output](documentation/dataset_inspection_results.txt)
 - [Architecture diagram](architecture/pipeline_architecture.md)
