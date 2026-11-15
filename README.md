@@ -9,7 +9,7 @@ UCI sample CSV → Python loader → Snowflake RAW → dbt → Snowflake STAGING
                  Apache Airflow (local Docker) runs the loader, dbt run, dbt test, and validates
 ```
 
-> **Airbyte Cloud was configured first (File source → Snowflake) but could not sync because of an insufficient-credits restriction.** The team will not add a payment method, so a Python loader replaced Airbyte. The Snowflake names `AIRBYTE_USER` / `AIRBYTE_ROLE` are historical and now belong to the loader.
+> **Airbyte Cloud ingestion was blocked by a billing restriction. An insufficient-credits message was observed during setup, and the connection was subsequently disabled by Airbyte Cloud due to a billing issue. The project therefore uses Python-based ingestion into Snowflake instead.** The team will not add a payment method. Evidence: [screenshot 05](screenshots/05_airbyte_configuration.png) shows the later billing-related disablement, not the original message. The Snowflake names `AIRBYTE_USER` / `AIRBYTE_ROLE` are historical and now belong to the loader.
 
 Diagram: [architecture/pipeline_architecture.md](architecture/pipeline_architecture.md)
 
@@ -35,11 +35,11 @@ Revenue means gross valid sales (`Quantity × UnitPrice`) before returns; cancel
 | Python loader | **Run against Snowflake:** loaded all 744 rows into `RAW.ONLINE_RETAIL_SAMPLE`; all five verification counts match the CSV. A second load (from Airflow) replaced the rows with no duplicates |
 | dbt | **Run against Snowflake (from the Windows host):** `dbt debug` OK, `dbt run` created `STG_ONLINE_RETAIL` (view) and `FCT_SALES` (597 rows), 5 of 5 tests passed, and `validate_sample_results` confirmed 744 raw rows, 597 valid-sales rows, 72 orders, revenue 10,210.21 and 13 months |
 | Streamlit | **Tested against Snowflake** as `READER_USER`: the three queries match the CSV and the validated dbt data, and the dashboard renders in a browser. Screenshots not yet taken |
-| Airflow | **Partly working.** The container starts (`http://localhost:8081`) and the DAG loads. In the one run so far, `ingest_sample` succeeded but `dbt_run` failed with a dbt parse-cache `KeyError` (the Windows-made `dbt_project/target/partial_parse.msgpack` clashes with the Linux container), so `dbt_test` and `validate_results` did not run. Proposed fix: add `--no-partial-parse` to the DAG's dbt commands, then rerun once. **Not fixed yet** |
-| Airbyte Cloud | Configured, but **could not sync (insufficient credits)**; replaced by the Python loader |
-| Screenshots | None captured yet ([checklist](documentation/screenshot_checklist.md)) |
+| Airflow | **Working end to end.** The container starts (`http://localhost:8081`). An earlier run failed in `dbt_run` with a parse-cache `KeyError` (the Windows-made `partial_parse.msgpack` clashed with Linux). The DAG now sends dbt artifacts and logs to the container's `/tmp` (`DBT_TARGET_PATH` / `DBT_LOG_PATH`); the rerun passed all four tasks: loader 744 rows, `dbt run` 2/2 (597 rows), `dbt test` 5/5, validation OK (744 / 597 / 72 / 10210.21 / 13) |
+| Airbyte Cloud | Configured, but **blocked by a billing restriction** (insufficient-credits message seen during setup; connection later disabled by Airbyte Cloud due to a billing issue); replaced by the Python loader |
+| Screenshots | 11 of 12 captured in `screenshots/` (01 to 03 and 05 to 12); 04 (PostgreSQL fallback) is optional and skipped. 01 is a rendered Markdown preview and 02 a read-only pandas preview, not app screenshots; 05 shows the billing-related disablement. Details: [checklist](documentation/screenshot_checklist.md) |
 
-Earlier history: BigQuery was dropped (needs billing), then a local Airbyte install failed on memory, then Airbyte Cloud + Snowflake was chosen, and finally Python ingestion replaced Airbyte Cloud. Details: [business_problem.md](documentation/business_problem.md) section 18 and [teammate_handover.md](documentation/teammate_handover.md) (the handover describes the earlier local-Airbyte attempt, which is no longer the plan).
+Earlier history: BigQuery was dropped (needs billing), then a local Airbyte install failed on memory, then Airbyte Cloud + Snowflake was chosen, and finally Python ingestion replaced Airbyte Cloud. Details: [business_problem.md](documentation/business_problem.md) section 18. Teammate setup guide: [teammate_handover.md](documentation/teammate_handover.md).
 
 ## How to run it
 

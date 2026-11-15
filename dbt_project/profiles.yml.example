@@ -1,7 +1,7 @@
 # TEMPLATE. Copy to dbt_project/profiles.yml (Git-ignored). All values come from environment
 # variables (.env); there is no password: login uses a private key kept OUTSIDE the repository.
-# Not yet run against a real Snowflake account. `private_key_path` is the adapter's field for a
-# key file; confirm it on the first real run (dbt's current docs page only shows an inline key).
+# Verified against a real Snowflake account (dbt run, test and validation passed): `private_key_path`
+# is the adapter's field for a key file.
 ecommerce_analytics:
   target: dev
   outputs:

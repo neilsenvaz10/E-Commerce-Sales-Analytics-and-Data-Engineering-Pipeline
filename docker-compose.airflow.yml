@@ -1,5 +1,5 @@
 # Airflow for the college demo: one container, SQLite metadata, started separately from the
-# PostgreSQL fallback warehouse in docker-compose.yml. NOT built or started yet.
+# PostgreSQL fallback warehouse in docker-compose.yml. Built and run: the DAG passed end to end.
 #
 #   docker compose -f docker-compose.airflow.yml up -d --build
 #   docker compose -f docker-compose.airflow.yml down        (no -v needed; nothing to keep)

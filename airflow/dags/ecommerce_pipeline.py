@@ -7,7 +7,8 @@ because of a credit restriction, so this Python load replaced it.)
 Trigger it manually (schedule=None). Credentials come from environment variables and mounted key
 files (see docker-compose.airflow.yml and .env.example); nothing secret is stored here, and the
 tasks only log counts and dbt output.
-Written to run on Airflow 2.11 and 3.x. NOT yet run: Airflow has not been started.
+Written to run on Airflow 2.11 and 3.x. All four tasks have passed in Airflow with the dbt
+cache fix (separate target/log paths).
 """
 
 from __future__ import annotations
@@ -27,9 +28,16 @@ DBT_BIN = os.environ.get("DBT_BIN", "dbt")
 DBT_DIR = os.environ.get("DBT_PROJECT_DIR", "/opt/airflow/dbt_project")
 
 
-def _run(cmd: list[str], label: str) -> None:
+# dbt_project/ is bind-mounted from the Windows host. dbt's partial-parse cache (target/) written
+# on Windows holds backslash paths and breaks dbt on Linux (KeyError on macros/...). So the
+# container writes its own artifacts and logs to its own filesystem, never to the shared folder.
+DBT_TARGET = os.environ.get("DBT_AIRFLOW_TARGET_PATH", "/tmp/dbt_target")
+DBT_LOGS = os.environ.get("DBT_AIRFLOW_LOG_PATH", "/tmp/dbt_logs")
+
+
+def _run(cmd: list[str], label: str, env: dict[str, str] | None = None) -> None:
     """Run a command, show its output in the task log, and fail the task if it fails."""
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     print(result.stdout)
     if result.returncode != 0:
         print(result.stderr)
@@ -37,7 +45,12 @@ def _run(cmd: list[str], label: str) -> None:
 
 
 def _dbt(*args: str) -> None:
-    _run([DBT_BIN, *args, "--project-dir", DBT_DIR, "--profiles-dir", DBT_DIR], f"dbt {' '.join(args)}")
+    env = {**os.environ, "DBT_TARGET_PATH": DBT_TARGET, "DBT_LOG_PATH": DBT_LOGS}
+    _run(
+        [DBT_BIN, *args, "--project-dir", DBT_DIR, "--profiles-dir", DBT_DIR],
+        f"dbt {' '.join(args)}",
+        env=env,
+    )
 
 
 @dag(

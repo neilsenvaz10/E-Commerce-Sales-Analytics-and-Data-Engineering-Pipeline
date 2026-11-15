@@ -1,7 +1,10 @@
 # Phase 1: Business Problem Definition
 
 **Project:** E-Commerce Sales Analytics – Modern Automated Data Pipeline
-**Phase status:** Phase 1 documentation. The dataset has **not** been downloaded or inspected yet. Every statement about the data below is an expectation, to be verified in Phase 2.
+**Document status (updated for the completed project):** Sections 1 to 17 are the original Phase 1 business problem, questions, metrics and rules, kept as written. They were first drafted as expectations before the data was seen; Phase 2 then inspected the **full UCI dataset (541,909 rows)** and confirmed or refined them (findings and decisions: [dataset_description.md](dataset_description.md)). Where the implementation differs from the original plan, section 18 and the box below say so.
+
+> **Implemented pipeline (current):** a deterministic **744-row sample** of the UCI dataset (`dataset/sample/`) is loaded by a **Python loader** into **Snowflake** `RAW`, transformed by **dbt** into `STAGING` and `ANALYTICS`, and shown by **Streamlit** (three predefined questions); **Apache Airflow** runs the load, `dbt run`, `dbt test` and a validation (expected: 744 raw rows, 597 valid-sales rows, 72 orders, revenue 10,210.21, 13 months). Airbyte Cloud ingestion was blocked by a billing restriction (see section 18), and the local **PostgreSQL** warehouse is kept only as a verified fallback. Run steps: [runbook.md](runbook.md); diagram: [pipeline_architecture.md](../architecture/pipeline_architecture.md).
+> The text below names Airbyte and PostgreSQL because that was the original plan; the implemented stack is the one in this box.
 
 ---
 
@@ -9,7 +12,7 @@
 
 E-commerce businesses generate transaction data with every customer purchase. This data holds useful information about product sales, customer activity, revenue, and geographical purchasing patterns. Analysing it helps a business understand its sales performance and make better decisions.
 
-This project builds an automated data engineering pipeline using Airbyte, PostgreSQL, dbt, Apache Airflow, and Streamlit.
+This project builds an automated data engineering pipeline using Airbyte, PostgreSQL, dbt, Apache Airflow, and Streamlit (original plan; as implemented: Python ingestion, Snowflake, dbt, Apache Airflow and Streamlit, see the status box above).
 
 ## 2. Business Scenario
 
@@ -67,7 +70,7 @@ The system will help users analyse revenue, product performance, customer activi
 | 7 | What is the total number of transactions? | Total Transactions | InvoiceNo |
 | 8 | What are the monthly sales trends? | Monthly Sales Trends | InvoiceDate, Quantity, UnitPrice |
 
-**Feasibility check:** each question maps to fields the dataset is *expected* to contain (InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country). This is based on the dataset's published description. Whether the actual workbook has these fields in usable form is confirmed only in Phase 2.
+**Feasibility check:** each question maps to fields the dataset is *expected* to contain (InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country). This was based on the dataset's published description; Phase 2 confirmed that the actual workbook has all eight fields.
 
 ## 9. Business Metric Definitions
 
@@ -86,7 +89,7 @@ The system will help users analyse revenue, product performance, customer activi
 
 ## 10. Preliminary Data Quality Rules
 
-These rules are **provisional**. They will be confirmed or revised after the dataset is inspected in Phase 2.
+These were the **provisional** rules at Phase 1. They were confirmed or refined in Phase 2; the final decisions are in [dataset_description.md](dataset_description.md).
 
 | Situation | Proposed treatment |
 |---|---|
@@ -117,7 +120,7 @@ Raw records are always preserved unchanged in the raw layer. Cleaning happens on
 | Component | Role | What it is *not* |
 |---|---|---|
 | Airbyte (originally; now a Python loader, see section 18) | Ingests source data into the warehouse `raw` schema | Not a transformation tool here |
-| PostgreSQL | Stores raw, staging, and analytics data (three schemas) and runs SQL | |
+| PostgreSQL (originally; now Snowflake, see section 18) | Stores raw, staging, and analytics data (three schemas) and runs SQL. Implemented: Snowflake; PostgreSQL is a fallback only | |
 | dbt Core | Transforms data with SQL, tests it, documents it | Not an ingestion tool |
 | Apache Airflow | Orchestrates and monitors the run order | Not a storage or transformation engine |
 | Streamlit | Presents the dashboard and conversational interface | Reads analytics tables only |
@@ -131,8 +134,8 @@ See the diagram: [`architecture/pipeline_architecture.md`](../architecture/pipel
 | Data source | UCI Online Retail Dataset |
 | Language | Python |
 | Ingestion | Airbyte originally; **Python loader since the third revision (section 18)** |
-| Warehouse | PostgreSQL (local, Docker) |
-| Transformation | dbt Core (dbt-postgres adapter) |
+| Warehouse | Snowflake (free trial) in the implemented pipeline; local PostgreSQL (Docker) kept as a fallback |
+| Transformation | dbt Core (dbt-snowflake adapter; dbt-postgres was the original plan) |
 | Orchestration | Apache Airflow |
 | Dashboard | Streamlit |
 | Environment | VS Code, Windows 11, Docker Desktop, WSL2, Git |
@@ -155,7 +158,7 @@ See the diagram: [`architecture/pipeline_architecture.md`](../architecture/pipel
 ## 16. Assumptions
 
 - The UCI dataset is available from its official page: https://archive.ics.uci.edu/dataset/352/online+retail
-- The dataset has the expected columns listed above (**unverified until Phase 2**).
+- The dataset has the expected columns listed above (**confirmed in Phase 2**).
 - A local Docker PostgreSQL warehouse is sufficient for about 540,000 rows at no cost (revised 2026-11-15; originally Google Cloud free-tier usage was assumed, see Section 18).
 
 ## 17. Phase 1 Conclusion
@@ -188,4 +191,4 @@ The college only requires a minimal working pipeline, and running Airbyte locall
 
 ### Third revision (2026-11-15): Python ingestion replaces Airbyte Cloud
 
-Airbyte Cloud was set up (File source to Snowflake), but its syncs were blocked by an **insufficient-credits** error. The team will not add a payment method, so ingestion is done by a Python script, `ingestion/load_sample_to_snowflake.py`, that loads the 744-row sample CSV into `RAW.ONLINE_RETAIL_SAMPLE` using the same Snowflake user, role and key-pair login. The original project plan named Airbyte for ingestion; this is a documented deviation. The Snowflake objects named `AIRBYTE_USER` and `AIRBYTE_ROLE` are kept and are now historical names. The load keeps all source values and rows as they are, is repeatable (one transaction, no duplicates, rollback on error), and dbt performs all conversions and cleaning, with the same business rules as before.
+Airbyte Cloud was set up (File source to Snowflake). Airbyte Cloud ingestion was blocked by a billing restriction. An insufficient-credits message was observed during setup, and the connection was subsequently disabled by Airbyte Cloud due to a billing issue. The team will not add a payment method, so ingestion is done by a Python script, `ingestion/load_sample_to_snowflake.py`, that loads the 744-row sample CSV into `RAW.ONLINE_RETAIL_SAMPLE` using the same Snowflake user, role and key-pair login. The original project plan named Airbyte for ingestion; this is a documented deviation. The Snowflake objects named `AIRBYTE_USER` and `AIRBYTE_ROLE` are kept and are now historical names. The load keeps all source values and rows as they are, is repeatable (one transaction, no duplicates, rollback on error), and dbt performs all conversions and cleaning, with the same business rules as before.
