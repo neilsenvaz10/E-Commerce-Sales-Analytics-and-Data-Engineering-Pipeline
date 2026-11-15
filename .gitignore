@@ -1,0 +1,52 @@
+# --- Secrets and credentials (never commit) ---
+.env
+*.env
+!.env.example
+*.json.key
+service-account*.json
+*credentials*.json
+gcp-key*.json
+profiles.yml
+.streamlit/secrets.toml
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# --- dbt ---
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# --- Airflow ---
+airflow/logs/*
+airflow/airflow.db
+airflow/airflow.cfg
+airflow/webserver_config.py
+airflow/*.pid
+
+# --- Airbyte local runtime ---
+.airbyte/
+abctl/
+
+# --- Dataset ---
+# Original UCI workbook and derived files are large; document the download
+# source instead of committing them.
+dataset/original/*
+dataset/processed/*
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
