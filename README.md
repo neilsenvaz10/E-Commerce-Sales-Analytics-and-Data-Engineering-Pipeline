@@ -66,12 +66,15 @@ Revenue means gross valid positive sales (`Quantity × UnitPrice`) before return
 |---|---|
 | Workspace preparation | Complete |
 | 1. Business Problem Definition | Complete — screenshot deferred (`01_business_problem.png` to be captured in Phase 8) |
-| 2–8 | Not started |
+| 2. Dataset Collection and Inspection | Complete — screenshots `02` and `03` deferred to Phase 8 |
+| 3–8 | Not started |
 
 - Folder structure, `.gitignore`, `.env.example`, and a placeholder `requirements.txt` are in place.
 - No Python packages, containers, Airbyte, Airflow, or cloud services have been installed or configured.
-- The dataset has not been downloaded or inspected. Data-cleaning rules are provisional until Phase 2.
-- Phase 2 (Dataset Collection and Inspection) is next, pending approval.
+- The genuine UCI workbook is stored in `dataset/original/` (not committed to Git) and has been inspected: 541,909 rows, 8 columns. See [documentation/dataset_description.md](documentation/dataset_description.md).
+- Cleaning rules remain provisional until implemented in dbt (Phase 5). Recorded team decisions: (1) keep exact duplicate rows (possible revenue overstatement up to 0.23%); (2) keep valid non-product charges in gross valid-sales revenue but exclude a verified stock-code list from merchandise product rankings; (3) keep invoice `A563185` in raw data but classify its +11,062.06 bad-debt adjustment as a financial adjustment, excluded from gross valid-sales revenue and product rankings (refined revenue 10,655,622.48 versus 10,666,684.54 provisional); (4) the highest-revenue month compares complete months only (Dec 2010 to Nov 2011); (5) the monthly trend shows all months, with December 2011 labelled as a partial month (data ends 9 Dec 2011). The inspection results file keeps the provisional figures as historical evidence. Details: [documentation/dataset_description.md](documentation/dataset_description.md).
+- A Python 3.12 virtual environment (`.venv`, not committed) holds pandas and openpyxl. BigQuery, Airbyte, dbt and Airflow are not configured.
+- Phase 3 (Google BigQuery Setup) is next, pending approval.
 - Screenshot tracking: see [documentation/screenshot_checklist.md](documentation/screenshot_checklist.md).
 
 ## Project Structure
@@ -99,4 +102,17 @@ Two-member Data Engineering microproject.
 ## Documentation
 
 - [Phase 1: Business Problem Definition](documentation/business_problem.md)
+- [Phase 2: Dataset description and findings](documentation/dataset_description.md)
+- [Raw inspection output](documentation/dataset_inspection_results.txt)
 - [Architecture diagram](architecture/pipeline_architecture.md)
+
+## Reproducing the Dataset Inspection
+
+Download the ZIP from https://archive.ics.uci.edu/static/public/352/online+retail.zip, extract `Online Retail.xlsx` into `dataset/original/`, and confirm its SHA-256 matches the value in `documentation/dataset_description.md`. Then, from the project root in PowerShell:
+
+```powershell
+# Use a Python 3.12 interpreter for the venv (the one used here came from uv)
+<path-to-python-3.12> -m venv .venv
+.\.venv\Scripts\python.exe -m pip install pandas openpyxl
+.\.venv\Scripts\python.exe dataset\inspect_dataset.py
+```

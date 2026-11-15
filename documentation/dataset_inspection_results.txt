@@ -1,0 +1,214 @@
+
+=== FILE ===
+path: dataset\original\Online Retail.xlsx
+size_bytes: 23715344
+sha256: 43465a06f2ccf7c8b5bd2892bc7defb52f97487934fe93b16ae4c3936424676d
+
+=== SHEETS ===
+sheet: 'Online Retail', dimensions: A1:H541910
+
+=== SHAPE AND SCHEMA ===
+rows: 541909
+columns: 8
+column names: ['InvoiceNo', 'StockCode', 'Description', 'Quantity', 'InvoiceDate', 'UnitPrice', 'CustomerID', 'Country']
+matches expected columns: True
+dtypes (as read by pandas):
+InvoiceNo              object
+StockCode              object
+Description            object
+Quantity                int64
+InvoiceDate    datetime64[us]
+UnitPrice             float64
+CustomerID            float64
+Country                   str
+
+=== FIRST 5 RECORDS ===
+  InvoiceNo StockCode                          Description  Quantity         InvoiceDate  UnitPrice  CustomerID         Country
+0    536365    85123A   WHITE HANGING HEART T-LIGHT HOLDER         6 2010-12-01 08:26:00       2.55     17850.0  United Kingdom
+1    536365     71053                  WHITE METAL LANTERN         6 2010-12-01 08:26:00       3.39     17850.0  United Kingdom
+2    536365    84406B       CREAM CUPID HEARTS COAT HANGER         8 2010-12-01 08:26:00       2.75     17850.0  United Kingdom
+3    536365    84029G  KNITTED UNION FLAG HOT WATER BOTTLE         6 2010-12-01 08:26:00       3.39     17850.0  United Kingdom
+4    536365    84029E       RED WOOLLY HOTTIE WHITE HEART.         6 2010-12-01 08:26:00       3.39     17850.0  United Kingdom
+
+=== LAST 5 RECORDS ===
+       InvoiceNo StockCode                      Description  Quantity         InvoiceDate  UnitPrice  CustomerID Country
+541904    581587     22613      PACK OF 20 SPACEBOY NAPKINS        12 2011-12-09 12:50:00       0.85     12680.0  France
+541905    581587     22899     CHILDREN'S APRON DOLLY GIRL          6 2011-12-09 12:50:00       2.10     12680.0  France
+541906    581587     23254    CHILDRENS CUTLERY DOLLY GIRL          4 2011-12-09 12:50:00       4.15     12680.0  France
+541907    581587     23255  CHILDRENS CUTLERY CIRCUS PARADE         4 2011-12-09 12:50:00       4.15     12680.0  France
+541908    581587     22138    BAKING SET 9 PIECE RETROSPOT          3 2011-12-09 12:50:00       4.95     12680.0  France
+
+=== MISSING VALUES ===
+             missing    pct
+InvoiceNo          0   0.00
+StockCode          0   0.00
+Description     1454   0.27
+Quantity           0   0.00
+InvoiceDate        0   0.00
+UnitPrice          0   0.00
+CustomerID    135080  24.93
+Country            0   0.00
+
+=== EXACT DUPLICATE ROWS ===
+extra copies (rows removable if keep first): 5268
+all rows involved in a duplicate group: 10147
+
+=== INVOICE NUMBERS ===
+InvoiceNo python types: {<class 'int'>: 532618, <class 'str'>: 9291}
+distinct invoices (all): 25900
+cancelled invoice rows (InvoiceNo starts with 'C'): 9288
+distinct cancelled invoices: 3836
+non-cancelled invoices not matching 6 digits: 3 (examples: ['A563185', 'A563186', 'A563187'])
+
+=== QUANTITY ===
+non-numeric quantity: 0
+negative quantity rows: 10624
+zero quantity rows: 0
+negative quantity on NON-cancelled invoices: 1336
+positive quantity on cancelled invoices: 0
+
+=== UNIT PRICE ===
+zero price rows: 2515
+negative price rows: 2
+
+=== INVOICE DATE ===
+missing/unparseable dates: 0
+min date: 2010-12-01 08:26:00
+max date: 2011-12-09 12:50:00
+rows per month:
+InvoiceDate
+2010-12    42481
+2011-01    35147
+2011-02    27707
+2011-03    36748
+2011-04    29916
+2011-05    37030
+2011-06    36874
+2011-07    39518
+2011-08    35284
+2011-09    50226
+2011-10    60742
+2011-11    84711
+2011-12    25525
+Freq: M
+
+=== DISTINCT COUNTS ===
+distinct customers (non-null): 4372
+distinct stock codes: 4070
+distinct countries: 38
+distinct descriptions: 4223
+
+=== COUNTRY DISTRIBUTION (rows) ===
+Country
+United Kingdom          495478
+Germany                   9495
+France                    8557
+EIRE                      8196
+Spain                     2533
+Netherlands               2371
+Belgium                   2069
+Switzerland               2002
+Portugal                  1519
+Australia                 1259
+Norway                    1086
+Italy                      803
+Channel Islands            758
+Finland                    695
+Cyprus                     622
+Sweden                     462
+Unspecified                446
+Austria                    401
+Denmark                    389
+Japan                      358
+Poland                     341
+Israel                     297
+USA                        291
+Hong Kong                  288
+Singapore                  229
+Iceland                    182
+Canada                     151
+Greece                     146
+Malta                      127
+United Arab Emirates        68
+European Community          61
+RSA                         58
+Lebanon                     45
+Lithuania                   35
+Brazil                      32
+Czech Republic              30
+Bahrain                     19
+Saudi Arabia                10
+
+=== STOCK CODES THAT LOOK NON-PRODUCT (no digit) ===
+StockCode
+POST            1256
+DOT              710
+M                571
+D                 77
+S                 63
+BANK CHARGES      37
+AMAZONFEE         34
+CRUK              16
+DCGSSGIRL         13
+DCGSSBOY          11
+PADS               4
+B                  3
+m                  1
+
+=== DESCRIPTIONS ===
+missing descriptions: 1454
+stock codes mapped to more than one distinct description: 650
+
+=== DESCRIPTIVE STATISTICS (numeric) ===
+            Quantity      UnitPrice     CustomerID
+count  541909.000000  541909.000000  406829.000000
+mean        9.552250       4.611114   15287.690570
+std       218.081158      96.759853    1713.600303
+min    -80995.000000  -11062.060000   12346.000000
+25%         1.000000       1.250000   13953.000000
+50%         3.000000       2.080000   15152.000000
+75%        10.000000       4.130000   16791.000000
+max     80995.000000   38970.000000   18287.000000
+
+=== PRELIMINARY RULE IMPACT (counts only, no data changed) ===
+rows passing provisional valid-sales rule: 530104
+rows failing it: 11805
+valid sales: distinct invoices: 19960
+valid sales: distinct customers: 4338
+valid sales: rows with missing CustomerID: 132220
+valid sales: gross revenue (Quantity*UnitPrice): 10666684.54
+
+=== EXACT DUPLICATES: IMPACT ON PROVISIONAL VALID SALES ===
+extra duplicate copies passing valid rule: 5226
+revenue carried by those copies: 24573.74 (0.23% of valid revenue)
+extra duplicate copies with missing CustomerID: 43
+
+=== NON-STANDARD STOCK CODES IN VALID SALES (evidence for classification) ===
+   StockCode  rows   revenue                       descriptions
+        POST  1126  78101.88                            POSTAGE
+         DOT   706 206248.77                     DOTCOM POSTAGE
+           M   321  78110.27                             Manual
+          C2   141   7051.00                           CARRIAGE
+   DCGSSGIRL    13    144.43                    GIRLS PARTY BAG
+BANK CHARGES    12    165.00                       Bank Charges
+    DCGSSBOY    11    150.55                     BOYS PARTY BAG
+gift_0001_20     9    167.05 Dotcomgiftshop Gift Voucher £20.00
+gift_0001_10     8     74.97 Dotcomgiftshop Gift Voucher £10.00
+gift_0001_30     7    175.53 Dotcomgiftshop Gift Voucher £30.00
+gift_0001_50     4    167.56 Dotcomgiftshop Gift Voucher £50.00
+    DCGS0003     4      9.94                BOXED GLASS ASHTRAY
+        PADS     3      0.00         PADS TO MATCH ALL CUSHIONS
+gift_0001_40     3    100.70 Dotcomgiftshop Gift Voucher £40.00
+           S     2     63.05                            SAMPLES
+    DCGS0076     2     48.39       SUNJAR LED NIGHT NIGHT LIGHT
+   AMAZONFEE     2  13761.09                         AMAZON FEE
+           B     1  11062.06                    Adjust bad debt
+    DCGS0004     1     16.63         HAYNES CAMPER SHOULDER BAG
+    DCGS0069     1     15.79              OOH LA LA DOGS COLLAR
+    DCGS0070     1     12.72              CAMOUFLAGE DOG COLLAR
+           m     1      2.55                             Manual
+total non-standard rows: 2379, revenue: 395649.93
+
+=== SPECIAL CODES ACROSS ALL ROWS (D, CRUK) ===
+D: rows=77, descriptions=['Discount'], negative quantity rows=77
+CRUK: rows=16, descriptions=['CRUK Commission'], negative quantity rows=16

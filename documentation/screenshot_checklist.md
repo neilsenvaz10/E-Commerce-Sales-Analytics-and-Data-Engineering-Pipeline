@@ -5,8 +5,8 @@ Screenshots must be genuine captures saved in `screenshots/`. Only files that ex
 | # | File | Phase | Status |
 |---|---|---|---|
 | 1 | `01_business_problem.png` | 1 | **Pending — deferred to Phase 8** (approved by the team; capture the VS Code Markdown preview of `documentation/business_problem.md`) |
-| 2 | `02_dataset_preview.png` | 2 | Not captured |
-| 3 | `03_dataset_inspection.png` | 2 | Not captured |
+| 2 | `02_dataset_preview.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
+| 3 | `03_dataset_inspection.png` | 2 | **Pending — deferred to Phase 8** (approved by the team) |
 | 4 | `04_bigquery_setup.png` | 3 | Not captured |
 | 5 | `05_airbyte_configuration.png` | 4 | Not captured |
 | 6 | `06_airbyte_sync.png` | 4 | Not captured |
@@ -16,6 +16,12 @@ Screenshots must be genuine captures saved in `screenshots/`. Only files that ex
 | 10 | `10_airflow_execution.png` | 6 | Not captured |
 | 11 | `11_streamlit_dashboard.png` | 7 | Not captured |
 | 12 | `12_business_analytics.png` | 7 | Not captured |
+
+## How to capture the Phase 2 screenshots
+
+- `02_dataset_preview.png`: open `dataset/original/Online Retail.xlsx` in Excel and show the header row and first rows. Do not save or edit the workbook (close without saving).
+- `03_dataset_inspection.png`: in a VS Code PowerShell terminal run `.\.venv\Scripts\python.exe dataset\inspect_dataset.py` and capture the shape, missing-value, duplicate and cancellation sections (scroll up as needed, or open `documentation/dataset_inspection_results.txt`).
+- Save each into `screenshots\` with the exact filename and verify with `Test-Path`.
 
 ## How to capture `01_business_problem.png`
 
