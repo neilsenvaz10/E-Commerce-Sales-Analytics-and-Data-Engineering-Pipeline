@@ -1,5 +1,7 @@
 # Teammate Handover
 
+> **Update (2026-11-15, later):** the plan was simplified to the college minimum: the 744-row sample, **Airbyte Cloud + Snowflake** (free trials), two dbt models, one Airflow DAG and a three-question Streamlit app. The local-Airbyte (`abctl`) attempt described in sections 4 to 6 below is **no longer the plan**, and the local PostgreSQL warehouse is only a fallback. Follow [runbook.md](runbook.md) and the [README](../README.md) instead. The rest of this page is kept as history.
+
 Last updated: 2026-11-15. Written so a teammate can clone the repository and continue. Everything below reflects what was actually done and verified; anything not done is stated as not done.
 
 ## 1. Where the project stands
@@ -95,7 +97,7 @@ Do these in order and stop if anything looks wrong. The project owner asked for 
 5. **Open Airbyte** at http://localhost:8000. `abctl local credentials` shows the login and API client credentials. Treat them as secrets: do not paste them into chat, documents or commits.
 6. **Phase 4A spike (small test).** Build the 744-row sample (written to Git-ignored `dataset/processed/`):
    ```powershell
-   .\.venv\Scripts\python.exe ingestion\make_spike_sample.py
+   .\.venv\Scripts\python.exe ingestion\make_sample_csv.py
    ```
    Configure the File source and PostgreSQL destination (host `host.docker.internal`, port `5434`, database `ecommerce_analytics`, user `airbyte_user`, default schema `raw`), run one Full Refresh Overwrite sync, then check row count, `InvoiceNo` type and the `raw` schema.
 7. **Phase 4B:** only if the spike works, ingest the real workbook and compare row counts (source 541,909). Document the connector's metadata columns, update `documentation/`, and capture screenshots `05` and `06`.

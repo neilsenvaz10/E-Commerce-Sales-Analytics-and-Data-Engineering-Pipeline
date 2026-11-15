@@ -1,15 +1,17 @@
-# TEMPLATE ONLY. dbt is not installed yet and this file has not been tested.
-# Copy to dbt_project/profiles.yml (Git-ignored) in Phase 5. All values come from
-# environment variables (.env); never put a password in this file.
+# TEMPLATE. Copy to dbt_project/profiles.yml (Git-ignored). All values come from environment
+# variables (.env); there is no password: login uses a private key kept OUTSIDE the repository.
+# Not yet run against a real Snowflake account. `private_key_path` is the adapter's field for a
+# key file; confirm it on the first real run (dbt's current docs page only shows an inline key).
 ecommerce_analytics:
   target: dev
   outputs:
     dev:
-      type: postgres
-      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
-      port: "{{ env_var('POSTGRES_PORT', '5434') | as_number }}"
-      user: "{{ env_var('DBT_DB_USER') }}"
-      password: "{{ env_var('DBT_DB_PASSWORD') }}"
-      dbname: "{{ env_var('POSTGRES_DB') }}"
-      schema: staging        # models override this per folder (staging / analytics)
-      threads: 4
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_DBT_USER', 'TRANSFORM_USER') }}"
+      private_key_path: "{{ env_var('SNOWFLAKE_DBT_PRIVATE_KEY_PATH') }}"
+      role: TRANSFORM_ROLE
+      database: ECOMMERCE_ANALYTICS
+      warehouse: ECOMMERCE_WH
+      schema: STAGING        # models choose STAGING or ANALYTICS in dbt_project.yml
+      threads: 2

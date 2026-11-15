@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_online_retail
+    description: Typed raw lines with cancellation, financial-adjustment and non-product flags. No rows removed.
+    columns:
+      - name: invoice_no
+        description: Invoice number as text (numbers and 'C'/'A' prefixed values).
+        tests:
+          - not_null
+      - name: stock_code
+        tests:
+          - not_null
+
+  - name: fct_sales
+    description: Valid sales lines with line revenue (quantity x unit price). Not unique per invoice, since an invoice has several lines.
+    columns:
+      - name: invoice_no
+        tests:
+          - not_null
+      - name: line_revenue
+        tests:
+          - not_null

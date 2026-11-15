@@ -181,3 +181,7 @@ Phase 1 sets out the business problem, objectives, users, questions, metrics, pr
 **Trade-off:** PostgreSQL is a row-store database, not a cloud data warehouse. Airbyte's documentation suggests using it for smaller volumes (roughly 10 GB or less), which is far above this project's size (about 540,000 rows).
 
 See [`postgres_setup.md`](postgres_setup.md) for the new setup.
+
+### Second revision (2026-11-15): Snowflake and Airbyte Cloud for the college demo
+
+The college only requires a minimal working pipeline, and running Airbyte locally failed on this laptop's memory. The team therefore chose **Airbyte Cloud (free trial) and Snowflake (free trial)**, no payment details, with a reduced scope: a 744-row sample, one ingestion connection, two dbt models, one Airflow DAG and three predefined Streamlit questions. PostgreSQL is kept as a verified fallback. The business problem, KPI definitions and cleaning decisions are unchanged; the dbt models apply the Phase 2 rules (cancellations, the `A...` financial adjustment, non-product codes). See the [runbook](runbook.md).

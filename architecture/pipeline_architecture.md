@@ -1,38 +1,38 @@
-# Pipeline Architecture
+# Pipeline Architecture (college microproject)
 
-Planned architecture. Only the PostgreSQL warehouse container is being set up so far; the other components are **not yet implemented**, and this diagram shows the design only.
+Design only. **Nothing here has run yet:** no Airbyte Cloud or Snowflake account exists. The earlier local PostgreSQL warehouse (`docker-compose.yml`) is kept as a verified fallback and is not part of this path.
 
 ```mermaid
 flowchart LR
-    SRC["UCI Online Retail Dataset<br/>(source file)"]
-    AB["Airbyte<br/>ingestion"]
+    CSV["Sample CSV, 744 rows<br/>public GitHub URL"]
+    AB["Airbyte Cloud<br/>one File to Snowflake sync"]
 
-    subgraph PG["PostgreSQL (Docker, database ecommerce_analytics)"]
-        RAW[("raw schema<br/>untouched records")]
-        STG[("staging schema<br/>cleaned, typed")]
-        MART[("analytics schema<br/>marts for reporting")]
+    subgraph SF["Snowflake (ECOMMERCE_ANALYTICS)"]
+        RAW[("RAW<br/>online_retail_sample")]
+        STG[("STAGING<br/>stg_online_retail view")]
+        FCT[("ANALYTICS<br/>fct_sales table")]
     end
 
-    DBT["dbt Core<br/>SQL transformations + tests"]
-    ST["Streamlit<br/>dashboard + conversational BI"]
-    AF["Apache Airflow<br/>orchestration only"]
+    DBT["dbt Core<br/>2 models + tests"]
+    ST["Streamlit<br/>3 predefined questions"]
+    AF["Apache Airflow (local Docker)<br/>one DAG, orchestration only"]
 
-    SRC --> AB --> RAW
+    CSV --> AB --> RAW
     RAW --> DBT
-    DBT --> STG --> MART
-    MART --> ST
+    DBT --> STG --> FCT
+    FCT --> ST
 
-    AF -. triggers and monitors .-> AB
-    AF -. triggers .-> DBT
-    AF -. verifies tables .-> MART
+    AF -. 1 trigger sync, 2 wait for success .-> AB
+    AF -. 3 dbt run, 4 dbt test .-> DBT
+    AF -. 5 validate fct_sales .-> FCT
 ```
 
 ## Roles
 
-- **Airbyte** moves source records into the PostgreSQL `raw` schema (role `airbyte_user`, write access to `raw` only).
-- **PostgreSQL** stores all three layers and executes the SQL. It runs in Docker on host port 5434.
-- **dbt** reads `raw` and builds the `staging` and `analytics` schemas, then runs data tests (role `dbt_user`).
-- **Airflow** only schedules and sequences tasks (ingest, wait, verify, dbt run, dbt test, verify). It does not store or transform data.
-- **Streamlit** reads the `analytics` schema only, with a read-only role (`streamlit_ro`).
+- **Airbyte Cloud** reads the CSV from its public URL and writes it to the Snowflake `RAW` schema (Full Refresh Overwrite). Airflow calls its API (`POST /jobs`, then `GET /jobs/{id}`).
+- **Snowflake** stores all layers. Three key-pair service users with separate roles: `AIRBYTE_ROLE` (writes `RAW`), `TRANSFORM_ROLE` (dbt: reads `RAW`, writes `STAGING` and `ANALYTICS`), `READER_ROLE` (Streamlit: read-only on `ANALYTICS`).
+- **dbt Core** builds `stg_online_retail` and `fct_sales` and runs the tests.
+- **Airflow** only sequences the steps; it does not store or transform data.
+- **Streamlit** answers three fixed questions with fixed read-only queries.
 
-Revision note: BigQuery was replaced by PostgreSQL on 2026-11-15; see section 18 of [business_problem.md](../documentation/business_problem.md).
+Revision history: BigQuery to PostgreSQL (2026-11-15), then to Snowflake with Airbyte Cloud (2026-11-15). See section 18 of [business_problem.md](../documentation/business_problem.md).

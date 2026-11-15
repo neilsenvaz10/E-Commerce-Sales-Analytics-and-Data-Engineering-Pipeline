@@ -1,20 +1,19 @@
-# Project virtual environment: Python 3.12 (.venv, not committed).
-# The system Python (3.14) is NOT used. Versions marked "tested" were installed
-# together in the project venv and `pip check` reported no conflicts.
+# Project virtual environment: Python 3.12 (.venv, not committed). Versions marked "tested" were
+# installed together and `pip check` reported no conflicts.
+#   <python-3.12> -m venv .venv ; .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
-# Dataset inspection (Phase 2)        tested: pandas 3.1.1, openpyxl 3.1.5
+# Dataset inspection and sample CSV            tested: pandas 3.1.1, openpyxl 3.1.5
 pandas>=3.1,<4
 openpyxl>=3.1,<4
-
-# PostgreSQL connection test and Streamlit (Phase 3, 7)
 python-dotenv>=1.2,<2
+
+# Streamlit dashboard (Snowflake)              tested: streamlit 1.67.0, snowflake-connector-python 5.2.0,
+streamlit>=1.67,<2                             #         cryptography 50.0.2
+snowflake-connector-python>=5.2,<6
+cryptography>=50
+
+# Optional PostgreSQL fallback test            tested: psycopg 3.3.9
 psycopg[binary]>=3.3,<4
 
-# dbt (Phase 5) - NOT installed yet; will live in its own environment.
-# A dry run resolved dbt-postgres 1.11.0 together with a PRE-RELEASE dbt-core
-# (1.13.0b1), so a stable dbt-core must be pinned and re-checked first.
-# dbt-postgres
-
-# Airflow (Phase 6) runs from the official Docker image, not from this venv.
-# Streamlit (Phase 7) - not installed yet, version to be confirmed.
-# streamlit
+# dbt lives in its own environment: dbt_project/requirements.txt (.venv-dbt)
+# Airflow runs in Docker: airflow/Dockerfile

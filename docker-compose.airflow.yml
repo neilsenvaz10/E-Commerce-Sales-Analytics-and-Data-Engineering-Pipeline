@@ -1,0 +1,35 @@
+# Airflow for the college demo: one container, SQLite metadata, started separately from the
+# PostgreSQL fallback warehouse in docker-compose.yml. NOT built or started yet.
+#
+#   docker compose -f docker-compose.airflow.yml up -d --build
+#   docker compose -f docker-compose.airflow.yml down        (no -v needed; nothing to keep)
+#
+# Reads AIRBYTE_* and SNOWFLAKE_* from .env and needs dbt_project/profiles.yml
+# (copy of profiles.yml.example). See documentation/runbook.md.
+name: ecommerce_airflow
+
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: ecommerce_airflow
+    command: standalone
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRBYTE_API_URL: ${AIRBYTE_API_URL:-https://api.airbyte.com/v1}
+      AIRBYTE_CLIENT_ID: ${AIRBYTE_CLIENT_ID:?set AIRBYTE_CLIENT_ID in .env}
+      AIRBYTE_CLIENT_SECRET: ${AIRBYTE_CLIENT_SECRET:?set AIRBYTE_CLIENT_SECRET in .env}
+      AIRBYTE_CONNECTION_ID: ${AIRBYTE_CONNECTION_ID:?set AIRBYTE_CONNECTION_ID in .env}
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:?set SNOWFLAKE_ACCOUNT in .env}
+      SNOWFLAKE_DBT_USER: ${SNOWFLAKE_DBT_USER:-TRANSFORM_USER}
+      SNOWFLAKE_DBT_PRIVATE_KEY_PATH: /run/keys/dbt_key.p8   # container path of the mounted key
+      DBT_BIN: /home/airflow/dbt-venv/bin/dbt
+      DBT_PROJECT_DIR: /opt/airflow/dbt_project
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:ro
+      - ./dbt_project:/opt/airflow/dbt_project
+      # host path of the TRANSFORM_USER private key, kept outside the repo (use forward slashes)
+      - ${SNOWFLAKE_DBT_PRIVATE_KEY_PATH:?set SNOWFLAKE_DBT_PRIVATE_KEY_PATH in .env}:/run/keys/dbt_key.p8:ro

@@ -1,0 +1,5 @@
+# dbt for Snowflake. Resolved together on Python 3.12 in a dry run (stable dbt-core, not the 1.13 beta).
+# Install in its own environment, not in .venv:
+#   <python-3.12> -m venv .venv-dbt ; .\.venv-dbt\Scripts\python.exe -m pip install -r dbt_project\requirements.txt
+dbt-core==1.11.17
+dbt-snowflake==1.12.5
