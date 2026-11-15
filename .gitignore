@@ -36,6 +36,8 @@ airflow/*.pid
 # --- Airbyte local runtime ---
 .airbyte/
 abctl/
+# Downloaded helper binaries (for example abctl.exe); not source code.
+.tools/
 
 # --- Dataset ---
 # Original UCI workbook and derived files are large; document the download
