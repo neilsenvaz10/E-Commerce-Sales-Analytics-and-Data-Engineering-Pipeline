@@ -1,0 +1,15 @@
+# TEMPLATE ONLY. dbt is not installed yet and this file has not been tested.
+# Copy to dbt_project/profiles.yml (Git-ignored) in Phase 5 and fill in real
+# values through environment variables. Never put a key or password in this file.
+ecommerce_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BQ_STAGING_DATASET') }}"
+      location: "{{ env_var('BQ_LOCATION') }}"
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      threads: 4
+      priority: interactive

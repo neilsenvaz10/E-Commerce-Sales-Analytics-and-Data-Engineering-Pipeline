@@ -1,18 +1,21 @@
-# Initial placeholder. Versions are intentionally NOT pinned yet.
-# Python 3.14 is installed on this machine; dbt Core / Airflow compatibility
-# will be verified (likely a Python 3.11/3.12 virtual environment) during
-# environment setup, and exact versions pinned then. Nothing is installed yet.
+# Project virtual environment: Python 3.12 (.venv, not committed).
+# The system Python (3.14) is NOT used. dbt Core / Airflow / Airbyte tooling
+# compatibility is verified in later phases; those packages are not listed yet.
+# Versions marked "tested" were installed together in the project venv and
+# `pip check` reported no conflicts. Ranges are lower-bounded, not frozen.
 
-# Dataset inspection (Phase 2)
-pandas
-openpyxl
+# Dataset inspection (Phase 2)        tested: pandas 3.1.1, openpyxl 3.1.5
+pandas>=3.1,<4
+openpyxl>=3.1,<4
 
-# BigQuery access (Phase 3+)
-google-cloud-bigquery
-python-dotenv
+# BigQuery connection test (Phase 3)  tested: google-cloud-bigquery 3.47.0,
+#                                     python-dotenv 1.2.4, db-dtypes 1.9.0
+google-cloud-bigquery>=3.47,<4
+python-dotenv>=1.2,<2
+db-dtypes>=1.9,<2
 
-# Transformation (Phase 5) - version to be confirmed
+# Transformation (Phase 5) - not installed, version to be confirmed
 # dbt-bigquery
 
-# Dashboard (Phase 7)
-streamlit
+# Dashboard (Phase 7) - not installed, version to be confirmed
+# streamlit
